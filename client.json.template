@@ -1,0 +1,13 @@
+{
+  "redis": {
+    "host": "localhost"
+  },
+  "torrent_server": {
+    "host": "your.torrent.server",
+    "port": "9091"
+  },
+  "anime_directory": {
+    "download_path": "/tmp/download",
+    "anime_path": "/tmp/anime"
+  }
+}

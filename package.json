@@ -1,0 +1,17 @@
+{
+  "name": "client-app",
+  "version": "1.0.0",
+  "description": "Client side application for anime file watching",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Nathan Yam",
+  "license": "ISC",
+  "dependencies": {
+    "async": "^1.5.2",
+    "ioredis": "^1.15.1",
+    "request": "^2.69.0",
+    "transmission": "^0.4.3"
+  }
+}
