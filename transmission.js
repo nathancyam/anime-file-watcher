@@ -155,7 +155,7 @@ TransmissionWrapper.prototype = Object.create(Transmission.prototype, {
          * @returns {*}
          */
         value: function (url) {
-            if (url.indexOf('http') === 0) {
+            if (url.indexOf('http') !== 0) {
                 url = `http:${url}`;
             }
 
