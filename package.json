@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Client side application for anime file watching",
   "main": "index.js",
-  "repository": "https://bitbucket.org/nathancyam/anime-client-watcher"
+  "repository": "https://bitbucket.org/nathancyam/anime-client-watcher",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
