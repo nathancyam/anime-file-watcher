@@ -14,5 +14,8 @@
     "ioredis": "^1.15.1",
     "request": "^2.69.0",
     "transmission": "^0.4.3"
+  },
+  "devDependencies": {
+    "q": "^1.4.1"
   }
 }
