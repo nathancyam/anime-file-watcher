@@ -3,25 +3,26 @@
 const ACTION_ADD_TORRENT = 'add_torrent';
 const ACTION_NEW_FILE = 'new_file';
 
-var fs = require('fs');
-var Redis = require('ioredis');
+const fs = require('fs');
+const Redis = require('ioredis');
 
-var config = JSON.parse(fs.readFileSync(__dirname + '/client.json').toString());
-var redisSub = new Redis(6379, config.redis.host);
-var redisPub = new Redis(6379, config.redis.host);
-var Transmission = require('./transmission');
-var torrentServer = new Transmission(config.torrent_server);
-var DownloadFileWatcher = require('./file_watcher').FileWatcher;
+const config = JSON.parse(fs.readFileSync(__dirname + '/client.json').toString());
+const redisSub = new Redis(6379, config.redis.host);
+const updateUrl = config.update_url;
+const updateClient = require('./update_client');
+const Transmission = require('./transmission');
+const torrentServer = new Transmission(config.torrent_server);
+const DownloadFileWatcher = require('./file_watcher').FileWatcher;
 
-var downloadFileWatcher = new DownloadFileWatcher(config.anime_directory);
+const downloadFileWatcher = new DownloadFileWatcher(config.anime_directory);
+
 downloadFileWatcher.on('move_file', (filename) => {
   var payload = {
     action: ACTION_NEW_FILE,
     filename: filename
   };
 
-  // TODO: Replace this with a POST request instead?
-  redisPub.publish('torrent', JSON.stringify(payload));
+  updateClient.makeRequest(updateUrl, payload);
 });
 
 redisSub.subscribe('torrent', (err, count) => {
