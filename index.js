@@ -10,6 +10,7 @@ const config = JSON.parse(fs.readFileSync(__dirname + '/client.json').toString()
 const redisSub = new Redis(6379, config.redis.host);
 const updateUrl = config.update_url;
 const torrentUpdateUrl = config.torrent_server.update_url;
+const auth = config.auth;
 const updateClient = require('./update_client');
 const Transmission = require('./transmission');
 const torrentServer = new Transmission(config.torrent_server);
@@ -23,7 +24,7 @@ downloadFileWatcher.on('move_file', (filename) => {
     filename: filename
   };
 
-  updateClient.makeRequest(updateUrl, payload);
+  updateClient.makeRequest(updateUrl, auth, payload);
 });
 
 redisSub.subscribe('torrent', (err, count) => {
@@ -39,7 +40,7 @@ setInterval(() => {
       return simpleTorrent;
     });
 
-    updateClient.postJson(torrentUpdateUrl, {
+    updateClient.postJson(torrentUpdateUrl, auth, {
       torrentServer: simpleTorrents
     })
   });

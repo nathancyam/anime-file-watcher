@@ -8,12 +8,13 @@ const request = require('request');
 
 /**
  * @param {String} url
+ * @param auth
  * @param {Object} postPayload
  * @returns {Promise.<Object>}
  */
-exports.makeRequest = (url, postPayload) => {
+exports.makeRequest = (url, auth, postPayload) => {
   return new Promise((resolve, reject) => {
-    request.post(url, { form: postPayload }, (err, resp, body) => {
+    request.post(url, { form: postPayload }, auth, (err, resp, body) => {
       if (err) {
         console.error(`Failed to make update request with payload: ${postPayload}`);
         return reject(err);
@@ -25,9 +26,10 @@ exports.makeRequest = (url, postPayload) => {
   });
 };
 
-exports.postJson = (url, jsonPayload) => {
+exports.postJson = (url, auth, jsonPayload) => {
   return new Promise((resolve, reject) => {
     const options = {
+      auth: auth,
       method: 'POST',
       body: jsonPayload,
       json: true,
