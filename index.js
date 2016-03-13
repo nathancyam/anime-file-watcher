@@ -9,6 +9,7 @@ const Redis = require('ioredis');
 const config = JSON.parse(fs.readFileSync(__dirname + '/client.json').toString());
 const redisSub = new Redis(6379, config.redis.host);
 const updateUrl = config.update_url;
+const torrentUpdateUrl = config.torrent_server.update_url;
 const updateClient = require('./update_client');
 const Transmission = require('./transmission');
 const torrentServer = new Transmission(config.torrent_server);
@@ -28,6 +29,21 @@ downloadFileWatcher.on('move_file', (filename) => {
 redisSub.subscribe('torrent', (err, count) => {
   console.log(`Currently subscribed to ${count} channels on ${config.redis.host}:6379. Listening on 'torrent' channel.`);
 });
+
+setInterval(() => {
+  torrentServer.get((err, response) => {
+    const simpleFields = ['percentDone', 'name', 'id', 'downloadLimited', 'error', 'eta', 'peersConnected', 'name', 'torrentFile'];
+    const simpleTorrents = response.torrents.map(torrent => {
+      const simpleTorrent = {};
+      simpleFields.forEach(field => simpleTorrent[field] = torrent[field]);
+      return simpleTorrent;
+    });
+
+    updateClient.postJson(torrentUpdateUrl, {
+      torrentServer: simpleTorrents
+    })
+  });
+}, 5000);
 
 redisSub.on('message', (channel, message) => {
   if (channel !== 'torrent') {

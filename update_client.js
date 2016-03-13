@@ -25,3 +25,24 @@ exports.makeRequest = (url, postPayload) => {
   });
 };
 
+exports.postJson = (url, jsonPayload) => {
+  return new Promise((resolve, reject) => {
+    const options = {
+      method: 'POST',
+      body: jsonPayload,
+      json: true,
+      url: url
+    };
+
+    request(options, (err, resp, body) => {
+      if (err) {
+        console.error(`Failed to make JSON request with payload: ${jsonPayload}`);
+        return reject(err);
+      }
+
+      console.log(`Successfully made JSON request with payload: ${jsonPayload}`);
+      return resolve({ response: resp, body: body });
+    });
+
+  });
+};
