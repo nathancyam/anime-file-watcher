@@ -2,6 +2,8 @@
  * Created by nathanyam on 2/03/2016.
  */
 
+'use strict';
+
 /**
  * Gets the anime name from the file path
  *
@@ -9,8 +11,8 @@
  */
 exports.getAnimeName = function (filePath) {
   filePath = filePath.replace('_', ' ');
-  var nameRegex = new RegExp(']\\s(.*)\\s-', 'g');
-  var matches = nameRegex.exec(filePath);
+  let nameRegex = new RegExp(']\\s(.*)\\s-', 'g');
+  let matches = nameRegex.exec(filePath);
 
   if (matches.length >= 1) {
     return matches.pop();
