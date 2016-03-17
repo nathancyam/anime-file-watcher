@@ -84,12 +84,6 @@ var ResponseFormatter = {
             message = util.format(message, "Failed to add", responses.length);
         }
 
-        var showTorrent = function (array, cb) {
-            if (array.length === 0) {
-                return false;
-            }
-        };
-
         return {
             message: message,
             numberOfTorrents: responses.length,
@@ -121,12 +115,12 @@ TransmissionWrapper.prototype = Object.create(Transmission.prototype, {
 
             // Once the array of promises is fulfilled, we format them appropriately.
             Q.allSettled(torrentPromiseArray).then(
-                function (results) {
-                    return deferred.resolve(ResponseFormatter.formatTorrentResponses(results));
-                },
-                function (err) {
-                    return deferred.reject(err);
-                }
+              function (results) {
+                  return deferred.resolve(ResponseFormatter.formatTorrentResponses(results));
+              },
+              function (err) {
+                  return deferred.reject(err);
+              }
             );
 
             return deferred.promise;

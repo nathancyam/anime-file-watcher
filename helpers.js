@@ -9,7 +9,7 @@
  */
 exports.getAnimeName = function (filePath) {
   filePath = filePath.replace('_', ' ');
-  var nameRegex = new RegExp("]\\s(.*)\\s-", "g");
+  var nameRegex = new RegExp(']\\s(.*)\\s-', 'g');
   var matches = nameRegex.exec(filePath);
 
   if (matches.length >= 1) {
@@ -23,8 +23,9 @@ exports.getAnimeName = function (filePath) {
  * @param {String} string
  */
 exports.isAnimeFile = function isAnimeFile(string) {
-  var findSub = string.match(/^\[/i),
-    isAnime = false;
+  const findSub = string.match(/^\[/i);
+  let isAnime = false;
+
   if (findSub !== null && findSub.length > 0) {
     var fileType = string.split('.').pop();
     switch (fileType) {

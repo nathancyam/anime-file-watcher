@@ -3,13 +3,15 @@
  */
 
 /* jslint node: true */
-"use strict";
+'use strict';
 
 var fs = require('fs');
 var path = require('path');
 var util = require('util');
-var EventEmitter = require('events');
+var EventEmitter = require('events').EventEmitter;
 var AnimeUtil = require('./helpers');
+
+/** @typedef {{anime_path: String, download_path: String}} FileWatcherOptions */
 
 /**
  * @param {String} path
@@ -21,8 +23,9 @@ let fsStat = function (path) {
       if (err) {
         return reject(err);
       }
+
       return resolve(result);
-    })
+    });
   });
 };
 
@@ -37,34 +40,34 @@ let fsRename = function (originalPath, newPath) {
       if (err) {
         return reject(err);
       }
+
       return resolve(result);
-    })
-  })
+    });
+  });
 };
 
-let lastFired = Date.now();
-
-let FileWatcher = function FileWatcher(options) {
-  EventEmitter.call(this);
-
-  var animeDir;
-  var _this = this;
-  options.watchDir = options.download_path;
-  options.mediaDir = options.anime_path;
+class FileWatcher extends EventEmitter {
 
   /**
-   * @param {Object} event
-   * @param {String} filename
+   * @param {FileWatcherOptions} options
    */
-  let moveDirectory = function moveDirectory(event, filename) {
-    var deltaLastExecution = Date.now() - lastFired;
+  constructor(options) {
+    super();
+    this.animeDir = '';
+    this.lastFired = Date.now();
+    this.animeDir = options.anime_path;
+    this.watchDir = options.download_path;
+  }
+
+  onMoveDirectory(event, filename) {
+    const deltaLastExecution = Date.now() - this.lastFired;
     console.log(deltaLastExecution);
     if (deltaLastExecution < 1000) {
       return;
     }
 
-    lastFired = Date.now();
-    var originalPath = path.join(options.watchDir,  filename);
+    this.lastFired = Date.now();
+    const originalPath = path.join(this.watchDir, filename);
     console.log(`DEBUG: Detected file: ${originalPath}`);
 
     fsStat(originalPath)
@@ -80,39 +83,32 @@ let FileWatcher = function FileWatcher(options) {
         }
 
         // If the anime is valid, then find out what series it is
-        var animeName = AnimeUtil.getAnimeName(filename);
+        const animeName = AnimeUtil.getAnimeName(filename);
 
         // If we can verify what the series was, then we should move it to the media folder
-        animeDir = path.join(options.mediaDir, animeName);
-        return fsStat(animeDir);
+        this.animeDir = path.join(this.mediaDir, animeName);
+        return fsStat(this.animeDir);
       })
       .then(result => {
         if (result.isDirectory()) {
-          _this.emit('move_file', path.join(animeDir, filename));
-          return fsRename(originalPath, path.join(animeDir, filename));
+          this.emit('move_file', path.join(this.animeDir, filename));
+          return fsRename(originalPath, path.join(this.animeDir, filename));
         }
       })
       .catch(err => {
         if (err.code === 'ENOENT' && err.errno === -2) {
-          fs.mkdir(animeDir, function () {
-            _this.emit('move_file', path.join(animeDir, filename));
-            return fsRename(originalPath, path.join(animeDir, filename));
+          fs.mkdir(this.animeDir, () => {
+            this.emit('move_file', path.join(this.animeDir, filename));
+            return fsRename(originalPath, path.join(this.animeDir, filename));
           });
         }
       });
-  };
+  }
 
-  fs.watch(options.watchDir, moveDirectory);
-  console.log(`Now watching directory ${options.watchDir} and moving anime files to ${options.mediaDir}`);
-};
-
-util.inherits(FileWatcher, EventEmitter);
+  watch() {
+    fs.watch(this.watchDir, this.onMoveDirectory);
+    console.log(`Watching directory ${this.watchDir}. Target: ${this.animeDir}`);
+  }
+}
 
 exports.FileWatcher = FileWatcher;
-
-exports.AnimeFileWatcher = function AnimeFileWatcher(options, callback) {
-  options.mediaDir = options.anime_path;
-  console.log(`Now watching directory ${options.mediaDir}`);
-  fs.watch(options.mediaDir, callback)
-};
-

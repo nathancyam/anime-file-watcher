@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 const ACTION_ADD_TORRENT = 'add_torrent';
 const ACTION_NEW_FILE = 'new_file';
@@ -17,32 +17,46 @@ const torrentServer = new Transmission(config.torrent_server);
 const DownloadFileWatcher = require('./file_watcher').FileWatcher;
 
 const downloadFileWatcher = new DownloadFileWatcher(config.anime_directory);
+downloadFileWatcher.watch();
 
 downloadFileWatcher.on('move_file', (filename) => {
   var payload = {
     action: ACTION_NEW_FILE,
-    filename: filename
+    filename: filename,
   };
 
   updateClient.makeRequest(updateUrl, auth, payload);
 });
 
 redisSub.subscribe('torrent', (err, count) => {
-  console.log(`Currently subscribed to ${count} channels on ${config.redis.host}:6379. Listening on 'torrent' channel.`);
+  console.log(
+    `Subscribed to ${count} channels: ${config.redis.host}:6379. Listening on 'torrent' channel.`
+  );
 });
 
 setInterval(() => {
   torrentServer.get((err, response) => {
-    const simpleFields = ['percentDone', 'name', 'id', 'downloadLimited', 'error', 'eta', 'peersConnected', 'name', 'torrentFile'];
+    const simpleFields = [
+      'percentDone',
+      'name',
+      'id',
+      'downloadLimited',
+      'error',
+      'eta',
+      'peersConnected',
+      'name',
+      'torrentFile',
+    ];
+
     const simpleTorrents = response.torrents.map(torrent => {
       const simpleTorrent = {};
       simpleFields.forEach(field => simpleTorrent[field] = torrent[field]);
       return simpleTorrent;
     });
 
-    updateClient.postJson(torrentUpdateUrl, auth, {
-      torrentServer: simpleTorrents
-    })
+    updateClient.postJson(torrentUpdateUrl, {
+      torrentServer: simpleTorrents,
+    });
   });
 }, 5000);
 
@@ -56,7 +70,9 @@ redisSub.on('message', (channel, message) => {
     case ACTION_ADD_TORRENT:
       torrentServer.add(payload.torrentUrl)
         .then(res => console.log(`Torrent added successfully: ${payload.torrentUrl}`))
-        .catch(err => console.error(`Failed to add torrent: ${payload.torrentUrl}\n Error: ${err}`));
+        .catch(err => {
+          console.error(`Failed to add torrent: ${payload.torrentUrl} Error: ${err}`);
+        });
       break;
     case ACTION_NEW_FILE:
       console.log(payload);

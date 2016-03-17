@@ -1,8 +1,9 @@
+// jscs:disable requireShorthandArrowFunctions
 /**
  * Created by nathanyam on 12/03/2016.
  */
 
-"use strict";
+'use strict';
 
 const request = require('request');
 
@@ -26,14 +27,13 @@ exports.makeRequest = (url, auth, postPayload) => {
   });
 };
 
-exports.postJson = (url, auth, jsonPayload) => {
+exports.postJson = (url, jsonPayload) => {
   return new Promise((resolve, reject) => {
     const options = {
-      auth: auth,
       method: 'POST',
       body: jsonPayload,
       json: true,
-      url: url
+      url: url,
     };
 
     request(options, (err, resp, body) => {
