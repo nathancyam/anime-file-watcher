@@ -60,18 +60,14 @@ class FileWatcher extends EventEmitter {
   }
 
   onMoveDirectory(event, filename) {
-    const deltaLastExecution = Date.now() - this.lastFired;
-    console.log(deltaLastExecution);
-    if (deltaLastExecution < 1000) {
-      return;
-    }
-
     this.lastFired = Date.now();
     const originalPath = path.join(this.watchDir, filename);
+    let _animeDirectory = '';
     console.log(`DEBUG: Detected file: ${originalPath}`);
 
     fsStat(originalPath)
       .then(result => {
+
         // Is this change not a file or not a rename event?
         if (!result.isFile() || event !== 'rename') {
           return;
@@ -79,24 +75,30 @@ class FileWatcher extends EventEmitter {
 
         // Check if the filename is a valid anime file name
         if (!AnimeUtil.isAnimeFile(filename)) {
+          console.log('Not anime file');
           return;
         }
 
         // If the anime is valid, then find out what series it is
         const animeName = AnimeUtil.getAnimeName(filename);
+        console.log('Anime Name: ' + animeName);
 
         // If we can verify what the series was, then we should move it to the media folder
-        this.animeDir = path.join(this.mediaDir, animeName);
-        return fsStat(this.animeDir);
+        _animeDirectory = path.join(this.animeDir, animeName);
+        console.log('Anime Directory: ' + _animeDirectory);
+        return fsStat(_animeDirectory);
       })
       .then(result => {
+        console.log('Anime Directory Result: ' + result);
         if (result.isDirectory()) {
-          this.emit('move_file', path.join(this.animeDir, filename));
-          return fsRename(originalPath, path.join(this.animeDir, filename));
+          console.log('Found directory. Moving file');
+          this.emit('move_file', path.join(_animeDirectory, filename));
+          return fsRename(originalPath, path.join(_animeDirectory, filename));
         }
       })
       .catch(err => {
         if (err.code === 'ENOENT' && err.errno === -2) {
+          console.log('Could not find directory. Creating directory');
           fs.mkdir(this.animeDir, () => {
             this.emit('move_file', path.join(this.animeDir, filename));
             return fsRename(originalPath, path.join(this.animeDir, filename));
@@ -106,7 +108,7 @@ class FileWatcher extends EventEmitter {
   }
 
   watch() {
-    fs.watch(this.watchDir, this.onMoveDirectory);
+    fs.watch(this.watchDir, this.onMoveDirectory.bind(this));
     console.log(`Watching directory ${this.watchDir}. Target: ${this.animeDir}`);
   }
 }

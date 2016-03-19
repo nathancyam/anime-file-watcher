@@ -4,6 +4,7 @@ const ACTION_ADD_TORRENT = 'add_torrent';
 const ACTION_NEW_FILE = 'new_file';
 
 const fs = require('fs');
+const path = require('path');
 const Redis = require('ioredis');
 
 const config = JSON.parse(fs.readFileSync(__dirname + '/client.json').toString());
@@ -20,12 +21,13 @@ const downloadFileWatcher = new DownloadFileWatcher(config.anime_directory);
 downloadFileWatcher.watch();
 
 downloadFileWatcher.on('move_file', (filename) => {
+  console.log('Detected move_file event with filename: ' + filename);
   var payload = {
     action: ACTION_NEW_FILE,
-    filename: filename,
+    filename: path.basename(filename),
   };
 
-  updateClient.makeRequest(updateUrl, auth, payload);
+  updateClient.postJson(updateUrl, payload);
 });
 
 redisSub.subscribe('torrent', (err, count) => {
