@@ -57,6 +57,7 @@ class FileWatcher extends EventEmitter {
     this.lastFired = Date.now();
     this.animeDir = options.anime_path;
     this.watchDir = options.download_path;
+    console.log(options);
   }
 
   onMoveDirectory(event, filename) {

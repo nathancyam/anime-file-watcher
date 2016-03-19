@@ -16,19 +16,22 @@ const updateClient = require('./update_client');
 const Transmission = require('./transmission');
 const torrentServer = new Transmission(config.torrent_server);
 const DownloadFileWatcher = require('./file_watcher').FileWatcher;
+const Rx = require('rx');
 
 const downloadFileWatcher = new DownloadFileWatcher(config.anime_directory);
 downloadFileWatcher.watch();
 
-downloadFileWatcher.on('move_file', (filename) => {
-  console.log('Detected move_file event with filename: ' + filename);
-  var payload = {
-    action: ACTION_NEW_FILE,
-    filename: path.basename(filename),
-  };
+const source = Rx.Observable.fromEvent(downloadFileWatcher, 'move_file')
+  .distinct()
+  .subscribe(filename => {
+    var payload = {
+      action: ACTION_NEW_FILE,
+      filename: filename,
+    };
 
-  updateClient.postJson(updateUrl, payload);
-});
+    console.log(`Request: ${updateUrl}: ${JSON.stringify(payload)}`);
+    updateClient.makeRequest(updateUrl, auth, payload);
+  });
 
 redisSub.subscribe('torrent', (err, count) => {
   console.log(
