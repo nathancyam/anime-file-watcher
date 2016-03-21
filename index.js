@@ -30,7 +30,7 @@ const source = Rx.Observable.fromEvent(downloadFileWatcher, 'move_file')
     };
 
     console.log(`Request: ${updateUrl}: ${JSON.stringify(payload)}`);
-    updateClient.makeRequest(updateUrl, auth, payload);
+    updateClient.postJson(updateUrl, auth, payload);
   });
 
 redisSub.subscribe('torrent', (err, count) => {
@@ -59,7 +59,7 @@ setInterval(() => {
       return simpleTorrent;
     });
 
-    updateClient.postJson(torrentUpdateUrl, {
+    updateClient.postJson(torrentUpdateUrl, auth, {
       torrentServer: simpleTorrents,
     });
   });
