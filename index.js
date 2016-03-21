@@ -26,7 +26,7 @@ const source = Rx.Observable.fromEvent(downloadFileWatcher, 'move_file')
   .subscribe(filename => {
     var payload = {
       action: ACTION_NEW_FILE,
-      filename: filename,
+      filename: path.basename(filename),
     };
 
     console.log(`Request: ${updateUrl}: ${JSON.stringify(payload)}`);
