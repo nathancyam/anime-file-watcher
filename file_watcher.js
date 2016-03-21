@@ -102,7 +102,7 @@ class FileWatcher extends EventEmitter {
           console.log('Could not find directory. Creating directory');
           fs.mkdir(_animeDirectory, () => {
             this.emit('move_file', path.join(_animeDirectory, filename));
-            return fsRename(originalPath, path.join(this.animeDir, filename));
+            return fsRename(originalPath, path.join(_animeDirectory, filename));
           });
         }
       });
