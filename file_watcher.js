@@ -46,6 +46,53 @@ let fsRename = function (originalPath, newPath) {
   });
 };
 
+class AnimeDirectory {
+  constructor(rootDir, animeTitle) {
+    this.hasAnimeDir = false;
+    this.fullPath = path.join(rootDir, animeTitle);
+  }
+
+  /**
+   * @returns {Promise.<AnimeDirectory>}
+   */
+  isPresent() {
+    console.log('isPresent()');
+    return fsStat(this.fullPath)
+      .then(() => {
+        this.hasAnimeDir = true;
+        return this;
+      })
+      .catch(() => {
+        this.hasAnimeDir = false;
+        return this;
+      });
+  }
+
+  /**
+   * @returns {Promise<AnimeDirectory>}
+   */
+  mkdir() {
+    return new Promise((resolve, reject) => {
+      fs.mkdir(this.fullPath, (err) => {
+        if (err) {
+          return reject(err);
+        }
+        return resolve(this);
+      })
+    });
+  }
+
+  /**
+   * @param originalPath
+   * @returns {Promise.<AnimeDirectory>}
+   */
+  moveFile(originalPath) {
+    this.fullFilePath = path.join(this.fullPath, path.basename(originalPath));
+    return fsRename(originalPath, this.fullFilePath)
+      .then(() => Promise.resolve(this));
+  }
+}
+
 class FileWatcher extends EventEmitter {
 
   /**
@@ -54,17 +101,12 @@ class FileWatcher extends EventEmitter {
   constructor(options) {
     super();
     this.animeDir = '';
-    this.lastFired = Date.now();
     this.animeDir = options.anime_path;
     this.watchDir = options.download_path;
-    console.log(options);
   }
 
   onMoveDirectory(event, filename) {
-    this.lastFired = Date.now();
     const originalPath = path.join(this.watchDir, filename);
-    let _animeDirectory = '';
-    console.log(`DEBUG: Detected file: ${originalPath}`);
 
     fsStat(originalPath)
       .then(result => {
@@ -76,35 +118,28 @@ class FileWatcher extends EventEmitter {
 
         // Check if the filename is a valid anime file name
         if (!AnimeUtil.isAnimeFile(filename)) {
-          console.log('Not anime file');
           return;
         }
 
         // If the anime is valid, then find out what series it is
         const animeName = AnimeUtil.getAnimeName(filename);
-        console.log('Anime Name: ' + animeName);
 
         // If we can verify what the series was, then we should move it to the media folder
-        _animeDirectory = path.join(this.animeDir, animeName);
-        console.log('Anime Directory: ' + _animeDirectory);
-        return fsStat(_animeDirectory);
+        const animeDirectory = new AnimeDirectory(this.animeDir, animeName);
+        return animeDirectory.isPresent();
       })
-      .then(result => {
-        console.log('Anime Directory Result: ' + result);
-        if (result.isDirectory()) {
-          console.log('Found directory. Moving file');
-          this.emit('move_file', path.join(_animeDirectory, filename));
-          return fsRename(originalPath, path.join(_animeDirectory, filename));
+      .then(animeDir => {
+        if (animeDir.hasAnimeDir) {
+          return animeDir.moveFile(originalPath);
         }
+
+        return animeDir
+          .mkdir()
+          .then(animeDir => animeDir.moveFile(originalPath));
       })
+      .then(animeDir => this.emit('move_file', animeDir.fullFilePath))
       .catch(err => {
-        if (err.code === 'ENOENT' && err.errno === -2) {
-          console.log('Could not find directory. Creating directory');
-          fs.mkdir(_animeDirectory, () => {
-            this.emit('move_file', path.join(_animeDirectory, filename));
-            return fsRename(originalPath, path.join(_animeDirectory, filename));
-          });
-        }
+        console.error(err);
       });
   }
 
