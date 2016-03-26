@@ -28,8 +28,6 @@ exports.postJson = (url, auth, jsonPayload) => {
         console.error(`Failed to make JSON request with payload: ${jsonPayload}`);
         return reject(err);
       }
-
-      console.log(`Successfully made JSON request with payload: ${jsonPayload}`);
       return resolve({ response: resp, body: body });
     });
 

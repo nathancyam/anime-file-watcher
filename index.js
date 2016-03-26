@@ -2,6 +2,7 @@
 
 const ACTION_ADD_TORRENT = 'add_torrent';
 const ACTION_NEW_FILE = 'new_file';
+const ACTION_MOVE_TORRENT_FILE = 'move_torrent_file';
 
 const fs = require('fs');
 const path = require('path');
@@ -14,7 +15,9 @@ const torrentUpdateUrl = config.torrent_server.update_url;
 const auth = config.auth;
 const updateClient = require('./update_client');
 const Transmission = require('./transmission');
+const FileMover = require('./torrents/file_mover');
 const torrentServer = new Transmission(config.torrent_server);
+const fileMover = new FileMover(torrentServer);
 const DownloadFileWatcher = require('./file_watcher').FileWatcher;
 const Rx = require('rx');
 
@@ -79,9 +82,15 @@ redisSub.on('message', (channel, message) => {
           console.error(`Failed to add torrent: ${payload.torrentUrl} Error: ${err}`);
         });
       break;
+
     case ACTION_NEW_FILE:
       console.log(payload);
       break;
+
+    case ACTION_MOVE_TORRENT_FILE:
+      fileMover.moveTorrentFiles(payload.torrentId, payload.destinationDirectory);
+      break;
+
     default:
       break;
   }
