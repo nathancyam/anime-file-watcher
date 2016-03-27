@@ -10,7 +10,7 @@
   "author": "Nathan Yam",
   "license": "ISC",
   "dependencies": {
-    "async": "^1.5.2",
+    "async": "^2.0.0-rc.2",
     "ioredis": "^1.15.1",
     "request": "^2.69.0",
     "rx": "^4.1.0",
