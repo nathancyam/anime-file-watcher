@@ -97,11 +97,13 @@ redisSub.on('message', (channel, message) => {
   console.log(payload);
   switch (payload.action) {
     case ACTION_ADD_TORRENT:
-      torrentServer.add(payload.torrentUrl)
-        .then(res => console.log(`Torrent added successfully: ${payload.torrentUrl}`))
-        .catch(err => {
+      torrentServer.add(payload.torrentUrl, (err, res) => {
+        if (err) {
           console.error(`Failed to add torrent: ${payload.torrentUrl} Error: ${err}`);
-        });
+        }
+
+        console.log(`Torrent added successfully: ${payload.torrentUrl}`);
+      });
       break;
 
     case ACTION_NEW_FILE:
