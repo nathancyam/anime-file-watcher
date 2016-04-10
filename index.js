@@ -5,6 +5,7 @@ const ACTION_NEW_FILE = 'new_file';
 const ACTION_MOVE_TORRENT_FILE = 'move_torrent_file';
 const ACTION_PAUSE_TORRENT = 'pause_torrent';
 const ACTION_RESUME_TORRENT = 'resume_torrent';
+const ACTION_FORCE_UPDATE = 'force_update';
 
 const fs = require('fs');
 const path = require('path');
@@ -63,37 +64,51 @@ redisSub.subscribe('torrent', (err, count) => {
 });
 
 let previousTorrentsHash = '';
+function postTorrentListing(response, forcePush) {
+  forcePush = forcePush || false;
+  const simpleFields = [
+    'percentDone',
+    'name',
+    'id',
+    'downloadLimited',
+    'error',
+    'eta',
+    'status',
+    'peersConnected',
+    'name',
+    'torrentFile',
+  ];
+
+  const simpleTorrents = response.torrents.map(torrent => {
+    const simpleTorrent = {};
+    simpleFields.forEach(field => simpleTorrent[field] = torrent[field]);
+    return simpleTorrent;
+  });
+
+  const currentTorrentHash = crypto.createHash('md5')
+    .update(JSON.stringify(simpleTorrents))
+    .digest('hex');
+
+  if (forcePush) {
+    previousTorrentsHash = currentTorrentHash;
+    updateClient.postJson(torrentUpdateUrl, auth, {
+      torrentServer: simpleTorrents,
+    });
+    return;
+  }
+
+  if (!forcePush && currentTorrentHash !== previousTorrentsHash) {
+    previousTorrentsHash = currentTorrentHash;
+    updateClient.postJson(torrentUpdateUrl, auth, {
+      torrentServer: simpleTorrents,
+    });
+    return;
+  }
+}
+
 setInterval(() => {
   torrentServer.get((err, response) => {
-    const simpleFields = [
-      'percentDone',
-      'name',
-      'id',
-      'downloadLimited',
-      'error',
-      'eta',
-      'status',
-      'peersConnected',
-      'name',
-      'torrentFile',
-    ];
-
-    const simpleTorrents = response.torrents.map(torrent => {
-      const simpleTorrent = {};
-      simpleFields.forEach(field => simpleTorrent[field] = torrent[field]);
-      return simpleTorrent;
-    });
-
-    const currentTorrentHash = crypto.createHash('md5')
-      .update(JSON.stringify(simpleTorrents))
-      .digest('hex');
-
-    if (currentTorrentHash !== previousTorrentsHash) {
-      previousTorrentsHash = currentTorrentHash;
-      updateClient.postJson(torrentUpdateUrl, auth, {
-        torrentServer: simpleTorrents,
-      });
-    }
+    return postTorrentListing(response);
   });
 }, 5000);
 
@@ -146,6 +161,12 @@ redisSub.on('message', (channel, message) => {
             console.error(err);
           }
         });
+      break;
+
+    case ACTION_FORCE_UPDATE:
+      torrentServer.get((err, response) => {
+        return postTorrentListing(response, true);
+      });
       break;
 
     default:
