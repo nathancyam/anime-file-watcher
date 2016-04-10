@@ -9,6 +9,7 @@ const ACTION_RESUME_TORRENT = 'resume_torrent';
 const fs = require('fs');
 const path = require('path');
 const Redis = require('ioredis');
+const crypto = require('crypto');
 
 const config = JSON.parse(fs.readFileSync(__dirname + '/client.json').toString());
 const redisSub = new Redis(6379, config.redis.host);
@@ -61,6 +62,7 @@ redisSub.subscribe('torrent', (err, count) => {
   );
 });
 
+let previousTorrentsHash = '';
 setInterval(() => {
   torrentServer.get((err, response) => {
     const simpleFields = [
@@ -82,9 +84,16 @@ setInterval(() => {
       return simpleTorrent;
     });
 
-    updateClient.postJson(torrentUpdateUrl, auth, {
-      torrentServer: simpleTorrents,
-    });
+    const currentTorrentHash = crypto.createHash('md5')
+      .update(JSON.stringify(simpleTorrents))
+      .digest('hex');
+
+    if (currentTorrentHash !== previousTorrentsHash) {
+      previousTorrentsHash = currentTorrentHash;
+      updateClient.postJson(torrentUpdateUrl, auth, {
+        torrentServer: simpleTorrents,
+      });
+    }
   });
 }, 5000);
 
