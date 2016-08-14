@@ -47,6 +47,10 @@ let fsRename = function (originalPath, newPath) {
 };
 
 class AnimeDirectory {
+  /**
+   * @param {String} rootDir
+   * @param {String} animeTitle
+   */
   constructor(rootDir, animeTitle) {
     this.hasAnimeDir = false;
     this.fullPath = path.join(rootDir, animeTitle);
@@ -69,7 +73,7 @@ class AnimeDirectory {
   }
 
   /**
-   * @returns {Promise<AnimeDirectory>}
+   * @returns {Promise.<AnimeDirectory>}
    */
   mkdir() {
     return new Promise((resolve, reject) => {
@@ -83,7 +87,7 @@ class AnimeDirectory {
   }
 
   /**
-   * @param originalPath
+   * @param {String} originalPath
    * @returns {Promise.<AnimeDirectory>}
    */
   moveFile(originalPath) {
