@@ -10,6 +10,7 @@ var Q = require('q');
 var Transmission = require('transmission');
 var util = require('util');
 var fs = require('fs');
+const exec = require('child_process').exec;
 const request = require('request');
 
 /**
@@ -27,7 +28,7 @@ function addTorrent(url, callback) {
     request(url).pipe(writeStream);
 
     writeStream.on('finish', () => {
-      process.exec(`transmission-remote -a ${filename}`, (error) => {
+      exec(`transmission-remote -a ${filename}`, (error) => {
         if (error) {
             return callback(error);
         }
