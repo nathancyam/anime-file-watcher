@@ -174,10 +174,6 @@ TransmissionWrapper.prototype = Object.create(Transmission.prototype, {
          * @returns {*}
          */
         value: function (url) {
-            if (url.indexOf('http') !== 0) {
-                url = `http:${url}`;
-            }
-
             var deferred = Q.defer();
 
             addTorrent(url, function (err, result) {
