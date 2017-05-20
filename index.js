@@ -123,7 +123,7 @@ redisSub.on('message', (channel, message) => {
     case ACTION_ADD_TORRENT:
       /** @var {String} torrentUrl */
       let torrentUrl = payload.torrentUrl;
-      if (!torrentUrl.matches(/https?:/)) {
+      if (!torrentUrl.match(/https?:/)) {
         torrentUrl = `http:${torrentUrl}`;
       }
       torrentServer.add(torrentUrl, (err, res) => {
