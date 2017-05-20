@@ -18,7 +18,7 @@ const updateUrl = config.update_url;
 const torrentUpdateUrl = config.torrent_server.update_url;
 const auth = config.auth;
 const updateClient = require('./update_client');
-const Transmission = require('transmission');
+const Transmission = require('./transmission');
 const FileMover = require('./torrents/file_mover');
 const torrentServer = new Transmission({
   host: config.torrent_server.host,
@@ -128,6 +128,7 @@ redisSub.on('message', (channel, message) => {
       torrentServer.add(torrentUrl, (err, res) => {
         if (err) {
           console.error(`Failed to add torrent: ${payload.torrentUrl} Error: ${err}`);
+          return;
         }
 
         console.log(`Torrent added successfully: ${payload.torrentUrl}`);

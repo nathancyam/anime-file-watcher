@@ -194,3 +194,5 @@ TransmissionWrapper.prototype = Object.create(Transmission.prototype, {
         }
     }
 });
+
+module.exports = TransmissionWrapper;
