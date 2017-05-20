@@ -23,12 +23,18 @@ var TransmissionWrapper = module.exports = function TransmissionWrapper(options)
 };
 
 function execTorrent(filename, callback) {
-  exec(`transmission-remote -a ${filename}`, (error) => {
-    if (error) {
+  const cmd = `transmission-remote -a ${filename}`;
+  console.log('cmd', cmd);
+  exec(cmd, (error, stdout, stderr) => {
+    if (error || stderr) {
+        console.error('Stderr', stderr);
       return callback(error);
     }
 
-    return callback(null, {
+    console.log('Std out', stdout);
+
+
+   return callback(null, {
       status: 'fulfilled',
       message: `Torrent added ${filename}`,
       name: {
