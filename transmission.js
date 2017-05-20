@@ -39,7 +39,7 @@ function execTorrent(filename, callback) {
 }
 
 function addTorrent(url, callback) {
-    if (url.contains('magnet')) {
+    if (url.includes('magnet')) {
       return execTorrent(url, callback);
     }
 
