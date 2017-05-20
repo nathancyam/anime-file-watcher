@@ -22,7 +22,7 @@ var TransmissionWrapper = module.exports = function TransmissionWrapper(options)
 };
 
 function addTorrent(url, callback) {
-    const filename = `/var/torrent/${new Date()}.torrent`;
+    const filename = `/var/torrents/${Date.now()}.torrent`;
     const writeStream = fs.createWriteStream(filename);
     request(url).pipe(writeStream);
 
