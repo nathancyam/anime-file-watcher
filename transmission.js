@@ -22,25 +22,33 @@ var TransmissionWrapper = module.exports = function TransmissionWrapper(options)
     Transmission.call(this, options);
 };
 
+function execTorrent(filename, callback) {
+  exec(`transmission-remote -a ${filename}`, (error) => {
+    if (error) {
+      return callback(error);
+    }
+
+    return callback(null, {
+      status: 'fulfilled',
+      message: `Torrent added ${filename}`,
+      name: {
+        value: filename
+      }
+    })
+  });
+}
+
 function addTorrent(url, callback) {
+    if (url.contains('magnet')) {
+      return execTorrent(url, callback);
+    }
+
     const filename = `/var/torrents/${Date.now()}.torrent`;
     const writeStream = fs.createWriteStream(filename);
     request(url).pipe(writeStream);
 
     writeStream.on('finish', () => {
-      exec(`transmission-remote -a ${filename}`, (error) => {
-        if (error) {
-            return callback(error);
-        }
-
-        return callback(null, {
-          status: 'fulfilled',
-          message: `Torrent added ${filename}`,
-          name: {
-            value: filename
-          }
-        })
-      });
+        execTorrent(filename, callback);
     });
 }
 
