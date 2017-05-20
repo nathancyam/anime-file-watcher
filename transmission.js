@@ -9,6 +9,8 @@ var async = require('async');
 var Q = require('q');
 var Transmission = require('transmission');
 var util = require('util');
+var fs = require('fs');
+const request = require('request');
 
 /**
  * @constructor
@@ -18,6 +20,28 @@ var util = require('util');
 var TransmissionWrapper = module.exports = function TransmissionWrapper(options) {
     Transmission.call(this, options);
 };
+
+function addTorrent(url, callback) {
+    const filename = `/var/torrent/${new Date()}.torrent`;
+    const writeStream = fs.createWriteStream(filename);
+    request(url).pipe(writeStream);
+
+    writeStream.on('finish', () => {
+      process.exec(`transmission-remote -a ${filename}`, (error) => {
+        if (error) {
+            return callback(error);
+        }
+
+        return callback(null, {
+          status: 'fulfilled',
+          message: `Torrent added ${filename}`,
+          name: {
+            value: filename
+          }
+        })
+      });
+    });
+}
 
 /**
  * Format module for Transmission server responses.
@@ -154,8 +178,6 @@ TransmissionWrapper.prototype = Object.create(Transmission.prototype, {
             }
 
             var deferred = Q.defer();
-
-            var addTorrent = Transmission.prototype.add.bind(this);
 
             addTorrent(url, function (err, result) {
                 if (err) {
