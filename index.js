@@ -123,7 +123,7 @@ redisSub.on('message', (channel, message) => {
     case ACTION_ADD_TORRENT:
       /** @var {String} torrentUrl */
       let torrentUrl = payload.torrentUrl;
-      torrentServer.add(torrentUrl, (err, res) => {
+      torrentServer.add(payload, (err, res) => {
         if (err) {
           console.error(`Failed to add torrent: ${payload.torrentUrl} Error: ${err}`);
           return;

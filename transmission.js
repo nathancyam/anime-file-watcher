@@ -44,12 +44,12 @@ function execTorrent(filename, callback) {
   });
 }
 
-function addTorrent(url, callback) {
+function addTorrent(url, name, callback) {
     if (url.includes('magnet')) {
       return execTorrent(url, callback);
     }
 
-    const filename = `/var/torrents/${Date.now()}.torrent`;
+    const filename = `/var/torrents/${name}.torrent`;
     const writeStream = fs.createWriteStream(filename);
     request(url).pipe(writeStream);
 
@@ -166,16 +166,8 @@ TransmissionWrapper.prototype = Object.create(Transmission.prototype, {
         }
     },
     add: {
-        value: function (url, options, cb) {
-            if (Array.isArray(url)) {
-                if (typeof options === 'function') {
-                    cb = options;
-                }
-                var addMultiplePromise = Q.denodeify(this.addMultipleTorrents.bind(this));
-                return addMultiplePromise(url);
-            } else {
-                return this.enhancedAdd(url, options);
-            }
+        value: function ({ url, name }, options, cb) {
+            return this.enhancedAdd(url, name, options);
         }
     },
     enhancedAdd: {
@@ -187,21 +179,19 @@ TransmissionWrapper.prototype = Object.create(Transmission.prototype, {
          * @param url
          * @returns {*}
          */
-        value: function (url) {
-            var deferred = Q.defer();
-
-            addTorrent(url, function (err, result) {
+        value: function (url, name) {
+            return new Promise((resolve, reject) => {
+              addTorrent(url, name, function (err, result) {
                 if (err) {
-                    var parseJsonErr = JSON.parse(err.result);
-                    parseJsonErr.arguments.url = url;
-                    err.result = JSON.stringify(parseJsonErr);
-                    return deferred.reject(err);
+                  var parseJsonErr = JSON.parse(err.result);
+                  parseJsonErr.arguments.url = url;
+                  err.result = JSON.stringify(parseJsonErr);
+                  return reject(err);
                 } else {
-                    return deferred.resolve(result);
+                  return resolve(result);
                 }
+              });
             });
-
-            return deferred.promise;
         }
     }
 });
