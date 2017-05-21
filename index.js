@@ -123,14 +123,14 @@ redisSub.on('message', (channel, message) => {
     case ACTION_ADD_TORRENT:
       /** @var {String} torrentUrl */
       let torrentUrl = payload.torrentUrl;
-      torrentServer.add(payload, (err, res) => {
-        if (err) {
-          console.error(`Failed to add torrent: ${payload.torrentUrl} Error: ${err}`);
-          return;
-        }
+      torrentServer.add(payload)
+        .then(() => {
+          console.log(`Torrent added successfully: ${payload.name} - ${torrentUrl}`);
+        })
+        .catch(err => {
+          console.error(`Failed to add torrent: ${payload.name} -  ${torrentUrl} Error: ${err}`);
+        });
 
-        console.log(`Torrent added successfully: ${payload.torrentUrl}`);
-      });
       break;
 
     case ACTION_NEW_FILE:

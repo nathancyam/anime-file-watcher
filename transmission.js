@@ -166,10 +166,8 @@ TransmissionWrapper.prototype = Object.create(Transmission.prototype, {
         }
     },
     add: {
-        value: function ({ torrentUrl, name }, options, cb) {
+        value: function ({ torrentUrl, name }, options) {
             return this.enhancedAdd(torrentUrl, name, options)
-              .then(res => cb(null, res))
-              .catch(err => cb(err));
         }
     },
     enhancedAdd: {
