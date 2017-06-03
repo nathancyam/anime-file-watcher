@@ -107,9 +107,11 @@ class TorrentEventEmitter extends EventEmitter {
 }
 const torrentHandler = new TorrentEventEmitter();
 
+let isUp = true;
 setInterval(() => {
   torrentServer.get((err, response) => {
-    if (err) {
+    if (err && isUp) {
+      isUp = false;
       return socket.emit(
         'torrent_client',
         {
@@ -119,7 +121,10 @@ setInterval(() => {
         }
       )
     }
-    return postTorrentListing(response);
+
+    if (isUp) {
+      return postTorrentListing(response);
+    }
   });
 }, 5000);
 
