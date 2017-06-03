@@ -123,9 +123,21 @@ setInterval(() => {
       )
     }
 
-    if (response) {
-      log.info('Torrent server available');
+    if (!isUp && response) {
       isUp = true;
+      log.info('Torrent server recovered');
+      socket.emit(
+        'torrent_client',
+        {
+          action: ACTION_TORRENT_SERVER_DOWN,
+          status: 'ok',
+          message: '[Client] Torrent server is now responding',
+        }
+      )
+    }
+
+    if (response) {
+      log.debug('Torrent server heartbeat');
       return postTorrentListing(response);
     }
   });
