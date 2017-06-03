@@ -6,6 +6,7 @@ const ACTION_MOVE_TORRENT_FILE = 'move_torrent_file';
 const ACTION_PAUSE_TORRENT = 'pause_torrent';
 const ACTION_RESUME_TORRENT = 'resume_torrent';
 const ACTION_FORCE_UPDATE = 'force_update';
+const ACTION_TORRENT_SERVER_DOWN = 'torrent_server_down';
 
 const fs = require('fs');
 const path = require('path');
@@ -101,22 +102,37 @@ function postTorrentListing(response, forcePush) {
   }
 }
 
-setInterval(() => {
-  torrentServer.get((err, response) => {
-    return postTorrentListing(response);
-  });
-}, 5000);
-
 const socket = io(config.socket.torrent_channel, config.socket.options);
 class TorrentEventEmitter extends EventEmitter {
 }
 const torrentHandler = new TorrentEventEmitter();
+
+setInterval(() => {
+  torrentServer.get((err, response) => {
+    if (err) {
+      return socket.emit(
+        'torrent_client',
+        {
+          action: ACTION_TORRENT_SERVER_DOWN,
+          status: 'fail',
+          message: 'Torrent server not responding',
+        }
+      )
+    }
+    return postTorrentListing(response);
+  });
+}, 5000);
 
 torrentHandler.on(ACTION_ADD_TORRENT, payload => {
   let torrentUrl = payload.torrentUrl;
   torrentServer.add(payload)
     .then(() => {
       log.info(`Torrent added successfully: ${payload.name} - ${torrentUrl}`);
+      socket.emit('torrent_client', {
+        action: ACTION_ADD_TORRENT,
+        status: 'ok',
+        message: `Torrent added successfully: ${payload.name} - ${torrentUrl}`
+      });
     })
     .catch(err => {
       log.info(`Failed to add torrent: ${payload.name} -  ${torrentUrl} Error: ${err}`);
@@ -129,7 +145,14 @@ torrentHandler.on(ACTION_MOVE_TORRENT_FILE, payload => {
 
 torrentHandler.on(ACTION_RESUME_TORRENT, payload => {
   execute(`transmission-remote -t ${payload.torrentId} -s`)
-    .then(() => console.log(`Started Torrent: ${payload.torrentId}`))
+    .then(() => {
+      console.log(`Started Torrent: ${payload.torrentId}`);
+      socket.emit('torrent_client', {
+        action: ACTION_RESUME_TORRENT,
+        status: 'ok',
+        message: `Started torrent: ${payload.torrentId}`,
+      });
+    })
     .catch(err => {
       log.error('Failed to stop torrent', err);
     });
@@ -137,9 +160,21 @@ torrentHandler.on(ACTION_RESUME_TORRENT, payload => {
 
 torrentHandler.on(ACTION_PAUSE_TORRENT, payload => {
   execute(`transmission-remote -t ${payload.torrentId} -S`)
-    .then(() => log.info(`Paused Torrent: ${payload.torrentId}`))
+    .then(() => {
+      log.info(`Paused Torrent: ${payload.torrentId}`)
+      socket.emit('torrent_client', {
+        action: ACTION_PAUSE_TORRENT,
+        status: 'ok',
+        message: `Paused torrent: ${payload.torrentId}`,
+      });
+    })
     .catch(err => {
       log.error(`Failed to stop torrent`, err);
+      socket.emit('torrent_client', {
+        action: ACTION_PAUSE_TORRENT,
+        status: 'fail',
+        message: `Unsuccessfully paused torrent: ${payload.torrentId}`,
+      });
     });
 });
 
