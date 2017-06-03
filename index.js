@@ -14,6 +14,7 @@ const crypto = require('crypto');
 
 const config = JSON.parse(fs.readFileSync(__dirname + '/client.json').toString());
 const redisSub = new Redis(6379, config.redis.host);
+const io = require('socket.io-client');
 const updateUrl = config.update_url;
 const torrentUpdateUrl = config.torrent_server.update_url;
 const auth = config.auth;
@@ -29,6 +30,11 @@ const torrentServer = new Transmission({
 const fileMover = new FileMover(torrentServer);
 const DownloadFileWatcher = require('./file_watcher').FileWatcher;
 const Rx = require('rx');
+
+const socket = io('http://localhost:1337/torrent_channel');
+socket.on('torrent', payload => {
+  console.log('Payload received', payload);
+});
 
 const downloadFileWatcher = new DownloadFileWatcher(config.anime_directory);
 downloadFileWatcher.watch();
@@ -105,6 +111,7 @@ function postTorrentListing(response, forcePush) {
     return;
   }
 }
+
 
 setInterval(() => {
   torrentServer.get((err, response) => {
