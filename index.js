@@ -112,6 +112,7 @@ setInterval(() => {
   torrentServer.get((err, response) => {
     if (err && isUp) {
       isUp = false;
+      log.error('Torrent server unavailable', err);
       return socket.emit(
         'torrent_client',
         {
@@ -123,6 +124,7 @@ setInterval(() => {
     }
 
     if (response) {
+      log.info('Torrent server available');
       isUp = true;
       return postTorrentListing(response);
     }
