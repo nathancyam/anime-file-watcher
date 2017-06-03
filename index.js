@@ -31,11 +31,6 @@ const fileMover = new FileMover(torrentServer);
 const DownloadFileWatcher = require('./file_watcher').FileWatcher;
 const Rx = require('rx');
 
-const socket = io('http://localhost:1337/torrent_channel');
-socket.on('torrent', payload => {
-  console.log('Payload received', payload);
-});
-
 const downloadFileWatcher = new DownloadFileWatcher(config.anime_directory);
 downloadFileWatcher.watch();
 
@@ -119,13 +114,9 @@ setInterval(() => {
   });
 }, 5000);
 
-redisSub.on('message', (channel, message) => {
-  if (channel !== 'torrent') {
-    return;
-  }
+const socket = io(config.socket.torrent_channel);
+socket.on('torrent', payload => {
 
-  const payload = JSON.parse(message);
-  console.log(payload);
   switch (payload.action) {
     case ACTION_ADD_TORRENT:
       /** @var {String} torrentUrl */
