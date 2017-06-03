@@ -115,7 +115,7 @@ setInterval(() => {
         {
           action: ACTION_TORRENT_SERVER_DOWN,
           status: 'fail',
-          message: 'Torrent server not responding',
+          message: '[Client] Torrent server not responding',
         }
       )
     }
@@ -131,7 +131,7 @@ torrentHandler.on(ACTION_ADD_TORRENT, payload => {
       socket.emit('torrent_client', {
         action: ACTION_ADD_TORRENT,
         status: 'ok',
-        message: `Torrent added successfully: ${payload.name} - ${torrentUrl}`
+        message: `[Client] Torrent added successfully: ${payload.name}`
       });
     })
     .catch(err => {
@@ -150,7 +150,7 @@ torrentHandler.on(ACTION_RESUME_TORRENT, payload => {
       socket.emit('torrent_client', {
         action: ACTION_RESUME_TORRENT,
         status: 'ok',
-        message: `Started torrent: ${payload.torrentId}`,
+        message: `[Client] Started torrent: ${payload.torrentId}`,
       });
     })
     .catch(err => {
@@ -165,7 +165,7 @@ torrentHandler.on(ACTION_PAUSE_TORRENT, payload => {
       socket.emit('torrent_client', {
         action: ACTION_PAUSE_TORRENT,
         status: 'ok',
-        message: `Paused torrent: ${payload.torrentId}`,
+        message: `[Client] Paused torrent: ${payload.torrentId}`,
       });
     })
     .catch(err => {
@@ -173,7 +173,7 @@ torrentHandler.on(ACTION_PAUSE_TORRENT, payload => {
       socket.emit('torrent_client', {
         action: ACTION_PAUSE_TORRENT,
         status: 'fail',
-        message: `Unsuccessfully paused torrent: ${payload.torrentId}`,
+        message: `[Client] Unsuccessfully paused torrent: ${payload.torrentId}`,
       });
     });
 });
