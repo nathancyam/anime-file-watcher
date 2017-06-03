@@ -10,6 +10,8 @@ const ACTION_FORCE_UPDATE = 'force_update';
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const bunyan = require('bunyan');
+const log = bunyan.createLogger({ name: 'torrent_client_app' });
 
 const config = JSON.parse(fs.readFileSync(__dirname + '/client.json').toString());
 const io = require('socket.io-client');
@@ -52,7 +54,7 @@ Rx.Observable.fromEvent(downloadFileWatcher, 'move_file')
       filename: path.basename(filename),
     };
 
-    console.log(`Request: ${updateUrl}: ${JSON.stringify(payload)}`);
+    log.info(`Request: ${updateUrl}`, payload);
     updateClient.postJson(updateUrl, auth, payload);
   });
 
@@ -98,7 +100,6 @@ function postTorrentListing(response, forcePush) {
   }
 }
 
-
 setInterval(() => {
   torrentServer.get((err, response) => {
     return postTorrentListing(response);
@@ -107,62 +108,61 @@ setInterval(() => {
 
 const socket = io(config.socket.torrent_channel, config.socket.options);
 
-socket.on('connect', () => {
-  console.log('Socket connected');
-
-  socket.on('torrent', payload => {
-    switch (payload.action) {
-      case ACTION_ADD_TORRENT:
-        /** @var {String} torrentUrl */
-        let torrentUrl = payload.torrentUrl;
-        torrentServer.add(payload)
-          .then(() => {
-            console.log(`Torrent added successfully: ${payload.name} - ${torrentUrl}`);
-          })
-          .catch(err => {
-            console.error(`Failed to add torrent: ${payload.name} -  ${torrentUrl} Error: ${err}`);
-          });
-
-        break;
-
-      case ACTION_NEW_FILE:
-        break;
-
-      case ACTION_MOVE_TORRENT_FILE:
-        fileMover.moveTorrentFiles(payload.torrentId, payload.destinationDirectory);
-        break;
-
-      case ACTION_PAUSE_TORRENT:
-        execute(`transmission-remote -t ${payload.torrentId} -S`)
-          .then(() => console.log(`Paused Torrent: ${payload.torrentId}`))
-          .catch(err => {
-            if (err) {
-              console.error(`Failed to stop torrent`);
-              console.error(err);
-            }
-          });
-        break;
-
-      case ACTION_RESUME_TORRENT:
-        execute(`transmission-remote -t ${payload.torrentId} -s`)
-          .then(() => console.log(`Started Torrent: ${payload.torrentId}`))
-          .catch(err => {
-            if (err) {
-              console.error(`Failed to stop torrent`);
-              console.error(err);
-            }
-          });
-        break;
-
-      case ACTION_FORCE_UPDATE:
-        torrentServer.get((err, response) => {
-          return postTorrentListing(response, true);
-        });
-        break;
-
-      default:
-        break;
-    }
-  });
+socket.on('connect', function () {
+  log.info('Socket connected', this.id);
 });
 
+socket.on('disconnect', function () {
+  log.info('Socket disconnected', this.id);
+});
+
+socket.on('torrent', payload => {
+  log.info('Socket: Payload', payload);
+
+  switch (payload.action) {
+    case ACTION_ADD_TORRENT:
+      /** @var {String} torrentUrl */
+      let torrentUrl = payload.torrentUrl;
+      torrentServer.add(payload)
+        .then(() => {
+          log.info(`Torrent added successfully: ${payload.name} - ${torrentUrl}`);
+        })
+        .catch(err => {
+          log.info(`Failed to add torrent: ${payload.name} -  ${torrentUrl} Error: ${err}`);
+        });
+
+      break;
+
+    case ACTION_NEW_FILE:
+      break;
+
+    case ACTION_MOVE_TORRENT_FILE:
+      fileMover.moveTorrentFiles(payload.torrentId, payload.destinationDirectory);
+      break;
+
+    case ACTION_PAUSE_TORRENT:
+      execute(`transmission-remote -t ${payload.torrentId} -S`)
+        .then(() => log.info(`Paused Torrent: ${payload.torrentId}`))
+        .catch(err => {
+          log.error(`Failed to stop torrent`, err);
+        });
+      break;
+
+    case ACTION_RESUME_TORRENT:
+      execute(`transmission-remote -t ${payload.torrentId} -s`)
+        .then(() => console.log(`Started Torrent: ${payload.torrentId}`))
+        .catch(err => {
+          log.error('Failed to stop torrent', err);
+        });
+      break;
+
+    case ACTION_FORCE_UPDATE:
+      torrentServer.get((err, response) => {
+        return postTorrentListing(response, true);
+      });
+      break;
+
+    default:
+      break;
+  }
+});
