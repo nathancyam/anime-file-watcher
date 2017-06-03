@@ -122,7 +122,8 @@ setInterval(() => {
       )
     }
 
-    if (isUp) {
+    if (response) {
+      isUp = true;
       return postTorrentListing(response);
     }
   });
