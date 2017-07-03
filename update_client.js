@@ -20,7 +20,6 @@ exports.postJson = (url, auth, jsonPayload) => {
       body: jsonPayload,
       json: true,
       url: url,
-      auth: auth
     };
 
     request(options, (err, resp, body) => {

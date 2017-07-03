@@ -137,7 +137,7 @@ setInterval(() => {
     }
 
     if (response) {
-      log.debug('Torrent server heartbeat');
+      log.info('Torrent server heartbeat');
       return postTorrentListing(response);
     }
   });
