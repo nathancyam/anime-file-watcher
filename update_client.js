@@ -20,6 +20,9 @@ exports.postJson = (url, auth, jsonPayload) => {
       body: jsonPayload,
       json: true,
       url: url,
+      headers: {
+        'API-TOKEN': auth,
+      },
     };
 
     request(options, (err, resp, body) => {

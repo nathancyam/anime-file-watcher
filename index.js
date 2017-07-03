@@ -103,8 +103,7 @@ function postTorrentListing(response, forcePush) {
 }
 
 const socket = io(config.socket.torrent_channel, config.socket.options);
-class TorrentEventEmitter extends EventEmitter {
-}
+class TorrentEventEmitter extends EventEmitter {}
 const torrentHandler = new TorrentEventEmitter();
 
 let isUp = true;
