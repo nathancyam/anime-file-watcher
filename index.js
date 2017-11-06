@@ -7,6 +7,7 @@ const ACTION_PAUSE_TORRENT = 'pause_torrent';
 const ACTION_RESUME_TORRENT = 'resume_torrent';
 const ACTION_FORCE_UPDATE = 'force_update';
 const ACTION_TORRENT_SERVER_DOWN = 'torrent_server_down';
+const ACTION_NEW_FIGURINE = 'new_figurine';
 
 const fs = require('fs');
 const path = require('path');
@@ -32,6 +33,7 @@ const torrentServer = new Transmission({
 const fileMover = new FileMover(torrentServer);
 const DownloadFileWatcher = require('./file_watcher').FileWatcher;
 const Rx = require('rx');
+const FigurineWatcher = require('./figurine');
 
 const downloadFileWatcher = new DownloadFileWatcher(config.anime_directory);
 downloadFileWatcher.watch();
@@ -180,7 +182,7 @@ torrentHandler.on(ACTION_RESUME_TORRENT, payload => {
 torrentHandler.on(ACTION_PAUSE_TORRENT, payload => {
   execute(`transmission-remote -t ${payload.torrentId} -S`)
     .then(() => {
-      log.info(`Paused Torrent: ${payload.torrentId}`)
+      log.info(`Paused Torrent: ${payload.torrentId}`);
       socket.emit('torrent_client', {
         action: ACTION_PAUSE_TORRENT,
         status: 'ok',
@@ -215,5 +217,23 @@ socket.on('torrent', payload => {
   log.info('Socket: Payload', payload);
   torrentHandler.emit(payload.action, payload);
 });
+
+const figurine$ = Rx.Observable.interval(1000 * 60 * 60)
+  .mergeMap(() => Rx.Observable.fromPromise(FigurineWatcher()));
+
+figurine$.filter(result => result.status === 'CHANGE')
+  .subscribe(({ difference }) => {
+    console.log(`${(new Date()).toLocaleString()} Difference found for figurine`, difference);
+    socket.emit('figurine_watcher', {
+      action: ACTION_NEW_FIGURINE,
+      status: 'ok',
+      message: JSON.stringify(difference),
+    });
+  });
+
+figurine$.filter(result => result.status === 'NO_CHANGE')
+  .subscribe(() => {
+    console.log(`${(new Date()).toLocaleString()} - No Changes found`);
+  });
 
 log.info('Started torrent client application');
