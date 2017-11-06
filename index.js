@@ -218,7 +218,7 @@ socket.on('torrent', payload => {
   torrentHandler.emit(payload.action, payload);
 });
 
-const figurine$ = Rx.Observable.interval(1000 * 60 * 60)
+const figurine$ = Rx.Observable.interval(1000 * 60 * 15)
   .mergeMap(() => Rx.Observable.fromPromise(FigurineWatcher()));
 
 figurine$.filter(result => result.status === 'CHANGE')

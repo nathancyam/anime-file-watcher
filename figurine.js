@@ -15,7 +15,17 @@ function md5(data) {
   return crypto.createHash('md5').update(data).digest("hex");
 }
 
+function log(pairs = {}) {
+  const logStr = Object.keys(pairs)
+    .map(key => `${key}=${pairs[key]}`)
+    .join(' ');
+
+  const now = (new Date()).toLocaleString();
+  console.log(`[${now}] ${logStr}`);
+}
+
 function request(url) {
+  const startTimestamp = Date.now();
   return new Promise((resolve, reject) => {
     http.get(url, (res) => {
       const { statusCode } = res;
@@ -38,8 +48,12 @@ function request(url) {
       res.on('data', (chunk) => { rawData += chunk; });
       res.on('end', () => {
         try {
+          const elapsed = Date.now() - startTimestamp;
+          log({ msg: 'request_time', time: elapsed });
           return resolve(rawData);
         } catch (e) {
+          const elapsed = Date.now() - startTimestamp;
+          log({ msg: 'failed_request', time: elapsed });
           return reject(e);
         }
       });
@@ -58,6 +72,7 @@ async function execute() {
   const newCollectionHash = md5(products.map(product => product._id).join());
 
   if (cachedVersion.products.length === 0 || cachedVersion._id === newCollectionHash) {
+    log({ msg: 'no_products_found', productsCount: products.length });
     cachedVersion._id = newCollectionHash;
     cachedVersion.products = products;
     return { status: 'NO_CHANGE', cacheId: cachedVersion._id };
@@ -65,6 +80,7 @@ async function execute() {
 
   if (cachedVersion.length !== 0 && newCollectionHash !== cachedVersion._id) {
     const difference = _.differenceBy(products, cachedVersion.products, '_id');
+    log({ msg: 'new_products_found', newProducts: difference.length });
     cachedVersion._id = newCollectionHash;
     cachedVersion.products = products;
     return { status: 'CHANGE', difference, cacheId: cachedVersion._id };
