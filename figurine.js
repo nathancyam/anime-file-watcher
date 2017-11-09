@@ -17,7 +17,7 @@ function md5(data) {
 
 function log(pairs = {}) {
   const logStr = Object.keys(pairs)
-    .map(key => `${key}=${pairs[key]}`)
+    .map(key => `${key}=${JSON.stringify(pairs[key])}`)
     .join(' ');
 
   const now = (new Date()).toLocaleString();
