@@ -80,7 +80,7 @@ async function execute() {
 
   if (cachedVersion.length !== 0 && newCollectionHash !== cachedVersion._id) {
     const difference = _.differenceBy(products, cachedVersion.products, '_id');
-    log({ msg: 'new_products_found', newProducts: difference.length });
+    log({ msg: 'new_products_found', newProducts: difference.length, difference });
     cachedVersion._id = newCollectionHash;
     cachedVersion.products = products;
     return { status: 'CHANGE', difference, cacheId: cachedVersion._id };
