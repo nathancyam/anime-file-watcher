@@ -109,40 +109,46 @@ class TorrentEventEmitter extends EventEmitter {}
 const torrentHandler = new TorrentEventEmitter();
 
 let isUp = true;
-setInterval(() => {
-  torrentServer.get((err, response) => {
-    if (err && isUp) {
-      isUp = false;
-      log.error('Torrent server unavailable', err);
-      return socket.emit(
-        'torrent_client',
-        {
-          action: ACTION_TORRENT_SERVER_DOWN,
-          status: 'fail',
-          message: '[Client] Torrent server not responding',
-        }
-      )
-    }
 
-    if (!isUp && response) {
-      isUp = true;
-      log.info('Torrent server recovered');
-      socket.emit(
-        'torrent_client',
-        {
-          action: ACTION_TORRENT_SERVER_DOWN,
-          status: 'ok',
-          message: '[Client] Torrent server is now responding',
-        }
-      )
-    }
+const torrentServer$ = Rx.Observable.fromNodeCallback(torrentServer.get, torrentServer);
 
-    if (response) {
-      log.info('Torrent server heartbeat');
-      return postTorrentListing(response);
+Rx.Observable.interval(5000)
+  .mergeMap(() => torrentServer$())
+  .subscribe(
+    response => {
+      if (!isUp && response) {
+        isUp = true;
+        log.info('Torrent server recovered');
+        socket.emit(
+          'torrent_client',
+          {
+            action: ACTION_TORRENT_SERVER_DOWN,
+            status: 'ok',
+            message: '[Client] Torrent server is now responding',
+          }
+        )
+      }
+
+      if (response) {
+        log.info('Torrent server heartbeat');
+        return postTorrentListing(response);
+      }
+    },
+    err => {
+      if (err && isUp) {
+        isUp = false;
+        log.error('Torrent server unavailable', err);
+        return socket.emit(
+          'torrent_client',
+          {
+            action: ACTION_TORRENT_SERVER_DOWN,
+            status: 'fail',
+            message: '[Client] Torrent server not responding',
+          }
+        )
+      }
     }
-  });
-}, 5000);
+  );
 
 torrentHandler.on(ACTION_ADD_TORRENT, payload => {
   let torrentUrl = payload.torrentUrl;
@@ -222,8 +228,9 @@ const figurine$ = Rx.Observable.interval(1000 * 60 * 15)
   .mergeMap(() => Rx.Observable.fromPromise(FigurineWatcher()));
 
 figurine$.filter(result => result.status === 'CHANGE')
+  .filter(result => result.difference.length !== 0)
   .subscribe(({ difference }) => {
-    console.log(`${(new Date()).toLocaleString()} Difference found for figurine`, difference);
+    log.info("Difference found for figurine", difference);
     socket.emit('figurine_watcher', {
       action: ACTION_NEW_FIGURINE,
       status: 'ok',
@@ -232,8 +239,6 @@ figurine$.filter(result => result.status === 'CHANGE')
   });
 
 figurine$.filter(result => result.status === 'NO_CHANGE')
-  .subscribe(() => {
-    console.log(`${(new Date()).toLocaleString()} - No Changes found`);
-  });
+  .subscribe(() => log.info('No difference found'));
 
 log.info('Started torrent client application');
